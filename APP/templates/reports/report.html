@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ branding.system_name }} – Cost Analysis Report</title>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans', sans-serif;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .badge {
+            padding: 2px 8px;
+            background: #e7ecf8;
+            border-radius: 12px;
+            font-size: 10px;
+        }
+
+        .muted {
+            color: #5c6f91;
+            font-size: 11px;
+        }
+
+        .table-small {
+            font-size: 11px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        {% if branding.logo_path and branding.logo_path|length %}
+        <img src="{{ branding.logo_path }}" alt="Government Emblem" />
+        {% endif %}
+        <div>
+            <h1>{{ branding.agency_name }}</h1>
+            <div class="muted">{{ branding.system_name }}</div>
+        </div>
+    </header>
+
+    <section class="section">
+        <h2>Document Overview</h2>
+        <table class="table-small">
+            <tbody>
+                <tr>
+                    <td>Document ID</td>
+                    <td>{{ document.id }}</td>
+                </tr>
+                <tr>
+                    <td>Filename</td>
+                    <td>{{ document.filename }}</td>
+                </tr>
+                <tr>
+                    <td>Uploaded On</td>
+                    <td>{{ document.uploaded_at }}</td>
+                </tr>
+                <tr>
+                    <td>Processed On</td>
+                    <td>{{ document.processed_at }}</td>
+                </tr>
+                <tr>
+                    <td>Uploaded By</td>
+                    <td>{{ document.uploaded_by }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="section">
+        <h2>Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="label">Total Interventions</div>
+                <div class="value">{{ summary.total_interventions }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Material Cost</div>
+                <div class="value">₹ {{ summary.total_cost | round(2) | string }}</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Processing Time</div>
+                <div class="value">{{ summary.analysis_duration | default('N/A') }} s</div>
+            </div>
+            <div class="summary-card">
+                <div class="label">Report Generated</div>
+                <div class="value">{{ summary.report_generated_at }}</div>
+            </div>
+        </div>
+    </section>
+
+    {% if warnings %}
+    <section class="section">
+        <h2>Warnings</h2>
+        {% for warning in warnings %}
+        <div class="alert">{{ warning }}</div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if assumptions %}
+    <section class="section">
+        <h2>Assumptions</h2>
+        <ul>
+            {% for assumption in assumptions %}
+            <li>{{ assumption }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endif %}
+
+    {% for item in interventions %}
+    <section class="section">
+        <h2>{{ loop.index }}. {{ item.intervention_type }}</h2>
+        <p>{{ item.description }}</p>
+        <div class="muted">
+            {% if item.location %}<span class="badge">Location: {{ item.location }}</span>{% endif %}
+            {% if item.chainage %}<span class="badge">Chainage: {{ item.chainage }}</span>{% endif %}
+        </div>
+        <p>
+            {% for irc in item.irc_standards %}
+            <span class="badge">{{ irc }}</span>
+            {% endfor %}
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Material</th>
+                    <th>Specification</th>
+                    <th>Qty</th>
+                    <th>Unit</th>
+                    <th>Unit Rate (₹)</th>
+                    <th>Total (₹)</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in item.materials %}
+                <tr>
+                    <td>{{ material.material_name }}</td>
+                    <td>{{ material.specification or '—' }}</td>
+                    <td>{{ material.quantity }}</td>
+                    <td>{{ material.unit }}</td>
+                    <td>{{ material.unit_rate | round(2) }}</td>
+                    <td>{{ material.total_cost | round(2) }}</td>
+                    <td>{{ material.source }} {% if material.reference %}({{ material.reference }}){% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="5">Subtotal</th>
+                    <th>₹ {{ item.subtotal | round(2) }}</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+        {% if item.specifications %}
+        <p class="muted">Specifications: {{ item.specifications }}</p>
+        {% endif %}
+    </section>
+    {% endfor %}
+
+    <section class="section">
+        <h2>Pricing Sources</h2>
+        <ul>
+            {% for src in pricing_sources %}
+            <li>{{ src.name }} – {{ src.url }}</li>
+            {% endfor %}
+        </ul>
+        <p class="muted">Generated on {{ generated_on }}</p>
+    </section>
+</body>
+
+</html>
